@@ -74,12 +74,12 @@
 		},
 		url: {
 			create: function () {
-				var wrap = $('<span />');
+				var btn = createButtonFactory('url useicons','&#xe005;')();
 				var input = $('<input />').addClass('url-input')
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
-				wrap.append(createButtonFactory('url useicons','&#xe005;')());
-				return wrap;
+				
+				return btn.add(input);
 			},
 			exec: $.noop
 		},
