@@ -40,7 +40,7 @@
 	
 	var execCommandFactory = function () {
 		var a = arguments;
-		return execCommand = function () {
+		return function (btn, popup, lastSelection) {
 			document.execCommand.apply(document, a);	
 		};	
 	};
@@ -243,9 +243,9 @@
 				
 				return btn.add(input);
 			},
-			exec: function ( url ) {
+			exec: function ( btn, popup, lastSelection ) {
 
-				rehighlightLastSelection();
+				rehighlightLastSelection(lastSelection);
 		
 				// Unlink any current links
 				document.execCommand( 'unlink', false );
@@ -268,11 +268,9 @@
 				return !!node.closest('blockquote').length;	
 			},
 			create: createButtonFactory('quote', parseHtmlEntity('&rdquo;'), 'quote'),
-			exec: function () {
+			exec: function (btn, popup, lastSelection ) {
 		
-				var nodeNames = findNodes( getSelection().focusNode );
-		
-				if ( hasNode( nodeNames, 'BLOCKQUOTE' ) ) {
+				if ( this.validNode($(lastSelection.focusNode)) ) {
 					document.execCommand( 'formatBlock', false, 'p' );
 					document.execCommand( 'outdent' );
 				} else {
