@@ -26,11 +26,12 @@
 		selection.addRange(range);
 	};
 	
-	rehighlightLastSelection function (lastSelection) {
+	var rehighlightLastSelection = function (lastSelection) {
 		if (!!lastSelection) {
 			var selection = getSelection();
 			selection.removeAllRanges();
 			selection.addRange( lastSelection.getRangeAt(0) );
+		}
 	}
 	
 	var parseHtmlEntity = function (he) {
@@ -40,28 +41,36 @@
 	var execCommandFactory = function () {
 		var a = arguments;
 		return execCommand = function () {
-			document.execCommand(a);	
+			document.execCommand.apply(document, a);	
 		};	
 	};
 	
-	var createButtonFactory = function (cla, text) {
+	var createButtonFactory = function (cla, text, key) {
 		return createButton = function () {
 			var b = $('<button />').addClass(cla).text(text);
-			var ctx = this;
+			if (!!key) {
+				b.attr('data-key',key);
+			}
 			return b;
 		};
+	};
+	
+	var eachActions = function (actions, cb) {
+		$.each(actions, function (i, a) {
+			if (!!a) {
+				var action = $.zenpen.actions[a];
+				cb(action, i, a);
+			} else {
+				console.error('Action %s does not exists in `$.zenpen.actions`', a);
+			}
+		});
 	};
 	
 	var createPopUp = function (actions) {
 		var popup = $('<div />').addClass('zenpen-panel');
 		var options = $('<div />').addClass('zenpen-options');
-		$.each(actions, function (i, a) {
-			if (!!a) {
-				var action = $.zenpen.actions[a];
-				options.append(action.create());
-			} else {
-				console.error('Action %s does not exists in `$.zenpen.actions`', a);
-			}
+		eachActions(actions, function (action, i, a) {
+			options.append(action.create());
 		});
 		return popup.append(options);
 	};
@@ -86,7 +95,6 @@
 			var scrollTimeout = 0;
 			var lastSelection = null;
 			var lastMovePos = {x:0,y:0};
-			var currentNode = $();
 			
 			var checkTextHighlighting = function (e) {
 				var t = $(e.target);
@@ -102,13 +110,13 @@
 				}
 		
 				// Check selections exist
-				else if ( selection.isCollapsed && !selectedText) {
+				else if ( selection.isCollapsed || !selectedText) {
 		
 					onSelectorBlur();
 				}
 		
 				// Text is selected
-				else if ( !selection.isCollapsed ) {
+				else if ( !selection.isCollapsed && !!selectedText) {
 					
 					lastMovePos.x = e.clientX;
 					lastMovePos.y = e.clientY;
@@ -142,34 +150,14 @@
 			};
 		
 			var updateBubbleStates = function () {
-		
-				var update = function (mustHave) {
-					
-				};
-		
-				/*if ( currentNode.closest('b').length ) {
-					boldButton.className = "bold active"
-				} else {
-					boldButton.className = "bold"
+				if (!lastSelection) {
+					return;
 				}
-		
-				if ( hasNode( currentNodeList, 'I') ) {
-					italicButton.className = "italic active"
-				} else {
-					italicButton.className = "italic"
-				}
-		
-				if ( hasNode( currentNodeList, 'BLOCKQUOTE') ) {
-					quoteButton.className = "quote active"
-				} else {
-					quoteButton.className = "quote"
-				}
-		
-				if ( hasNode( currentNodeList, 'A') ) {
-					urlButton.className = "url useicons active"
-				} else {
-					urlButton.className = "url useicons"
-				}*/
+				eachActions(options.actions, function (action, i, a) {
+					var btn = popupOpts.find('*[data-key="'+a+'"]');
+					var fx = action.validNode($(lastSelection.focusNode)) ? 'addClass' : 'removeClass';
+					btn[fx]('active');
+				});
 			};
 		
 			var onSelectorBlur = function () {
@@ -180,7 +168,7 @@
 					
 					setTimeout( function() {
 			
-						popup.removeClass('fade').css({top:'',left:''});
+						popup.removeClass('fade');
 						
 					}, 260 );
 				}
@@ -205,6 +193,16 @@
 				}
 				scrollTimeout = setTimeout(updateBubblePosition, 100);
 			});
+			
+			popup.on('click', '*[data-key]', function () {
+				var t = $(this);
+				var key = t.attr('data-key');
+				var action = $.zenpen.actions[key];
+				if (!!action) {
+					action.exec(t, popup, lastSelection);
+					updateBubbleStates();
+				}
+			});
 							
 			focus(elem);
 		};
@@ -220,16 +218,25 @@
 	
 	$.zenpen.actions = {
 		bold: {
-			create: createButtonFactory('bold', 'b'),
+			validNode: function (node) {
+				return !!node.closest('b, strong').length;	
+			},
+			create: createButtonFactory('bold', 'b', 'bold'),
 			exec: execCommandFactory('bold', false )
 		},
 		italic: {
-			create: createButtonFactory('italic', 'i'),
+			validNode: function (node) {
+				return !!node.closest('i, em').length;	
+			},
+			create: createButtonFactory('italic', 'i', 'italic'),
 			exec: execCommandFactory('italic', false )	
 		},
 		url: {
+			validNode: function (node) {
+				return !!node.closest('a').length;	
+			},
 			create: function () {
-				var btn = createButtonFactory('url useicons', parseHtmlEntity('&#xe005;'))();
+				var btn = createButtonFactory('url useicons', parseHtmlEntity('&#xe005;'), 'url')();
 				var input = $('<input />').addClass('url-input')
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
@@ -243,11 +250,12 @@
 				// Unlink any current links
 				document.execCommand( 'unlink', false );
 		
-				if (url !== "") {
+				if (!url) {
 				
 					// Insert HTTP if it doesn't exist.
-					if ( !url.match("^(http|https)://") ) {
-		
+					if ( !url.match("^(http|https)://") 
+					  || !url.match("^(mailto|tel|fax|skype|irc):")
+					  || !url.match("^/")  ) {
 						url = "http://" + url;	
 					} 
 		
@@ -256,7 +264,10 @@
 			}
 		},
 		quote: {
-			create: createButtonFactory('quote', parseHtmlEntity('&rdquo;')),
+			validNode: function (node) {
+				return !!node.closest('blockquote').length;	
+			},
+			create: createButtonFactory('quote', parseHtmlEntity('&rdquo;'), 'quote'),
 			exec: function () {
 		
 				var nodeNames = findNodes( getSelection().focusNode );
