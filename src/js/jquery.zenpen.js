@@ -9,12 +9,25 @@
 	
 	var log = !!window.console ? console.error || console.log : window.alert;
 	
+	var getSelection = function () {
+		if (!!window.getSelection) {
+			return window.getSelection();
+		} else if (!!document.selection) {
+			return document.selection;
+		}
+		log('No selection API found');
+	};
+	
 	var focus = function (elem) {
 		var range = document.createRange();
-		var selection = window.getSelection();
+		var selection = getSelection();
 		range.setStart(elem.get(0), 1);
 		selection.removeAllRanges();
 		selection.addRange(range);
+	};
+	
+	var parseHtmlEntity = function (he) {
+		return $('<div />').html(he).text();	
 	};
 	
 	var execCommandFactory = function () {
@@ -69,7 +82,7 @@
 			
 			var checkTextHighlighting = function (e) {
 				var t = $(e.target);
-				var selection = window.getSelection();
+				var selection = getSelection();
 				
 				//console.log(t, selection);
 		
@@ -80,7 +93,7 @@
 				}
 		
 				// Check selections exist
-				else if ( selection.isCollapsed === true && lastSelection.isCollapsed === false ) {
+				else if ( selection.isCollapsed === true ) {
 		
 					onSelectorBlur();
 				}
@@ -97,7 +110,7 @@
 					
 						// Show the ui bubble
 						//textOptions.className = "text-options active";
-						popupOpts.addClass('active');
+						popup.addClass('active');
 					//}
 				}
 		
@@ -106,7 +119,7 @@
 			};
 
 			var updateBubblePosition = function () {
-				var selection = window.getSelection();
+				var selection = getSelection();
 				var range = selection.getRangeAt(0);
 				var boundary = range.getBoundingClientRect();
 				
@@ -148,14 +161,17 @@
 			};
 		
 			var onSelectorBlur = function () {
-		
-				popupOpts.removeClass('active').addClass('fade');
 				
-				setTimeout( function() {
-		
-					popupOpts.removeClass('fade').css({top:'',left:''});
+				if (popup.hasClass('active') && !popup.hasClass('fade')) {
+			
+					popup.removeClass('active').addClass('fade');
 					
-				}, 260 )
+					setTimeout( function() {
+			
+						popup.removeClass('fade').css({top:'',left:''});
+						
+					}, 260 );
+				}
 			};
 
 			
@@ -165,7 +181,9 @@
 			
 			elem
 				.on('keyup' + namespace, checkTextHighlighting)
-				.on('mousedown' + namespace, checkTextHighlighting)
+				//.on('mousedown' + namespace, checkTextHighlighting)
+				.on('selectstart'+ namespace, checkTextHighlighting)
+				.on('selectionchange'+ namespace, checkTextHighlighting)
 				.on('mouseup' + namespace, checkTextHighlighting);
 				
 			wrap.on('scroll' + namespace, function() {
@@ -199,7 +217,7 @@
 		},
 		url: {
 			create: function () {
-				var btn = createButtonFactory('url useicons','&#xe005;')();
+				var btn = createButtonFactory('url useicons', parseHtmlEntity('&#xe005;'))();
 				var input = $('<input />').addClass('url-input')
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
@@ -226,10 +244,10 @@
 			}
 		},
 		quote: {
-			create: createButtonFactory('quote', '&rdquo;'),
+			create: createButtonFactory('quote', parseHtmlEntity('&rdquo;')),
 			exec: function () {
 		
-				var nodeNames = findNodes( window.getSelection().focusNode );
+				var nodeNames = findNodes( getSelection().focusNode );
 		
 				if ( hasNode( nodeNames, 'BLOCKQUOTE' ) ) {
 					document.execCommand( 'formatBlock', false, 'p' );
