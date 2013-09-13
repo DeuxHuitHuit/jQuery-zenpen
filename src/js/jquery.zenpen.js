@@ -26,6 +26,13 @@
 		selection.addRange(range);
 	};
 	
+	rehighlightLastSelection function (lastSelection) {
+		if (!!lastSelection) {
+			var selection = getSelection();
+			selection.removeAllRanges();
+			selection.addRange( lastSelection.getRangeAt(0) );
+	}
+	
 	var parseHtmlEntity = function (he) {
 		return $('<div />').html(he).text();	
 	};
@@ -77,14 +84,16 @@
 			var popupOpts = popup.find('.zenpen-options');
 			var wrap = $('<div />').addClass('zenpen-wrap');
 			var scrollTimeout = 0;
-			var lastSelection = false;
+			var lastSelection = null;
+			var lastMovePos = {x:0,y:0};
 			var currentNode = $();
 			
 			var checkTextHighlighting = function (e) {
 				var t = $(e.target);
 				var selection = getSelection();
+				var selectedText = selection.toString();
 				
-				//console.log(t, selection);
+				console.log(t, selection.isCollapsed, selectedText, selection);
 		
 				if ( t.is('input, textarea, button, *[contenteditable="true"]') ) {
 		
@@ -93,13 +102,16 @@
 				}
 		
 				// Check selections exist
-				else if ( selection.isCollapsed === true ) {
+				else if ( selection.isCollapsed && !selectedText) {
 		
 					onSelectorBlur();
 				}
 		
 				// Text is selected
-				else if ( selection.isCollapsed === false ) {
+				else if ( !selection.isCollapsed ) {
+					
+					lastMovePos.x = e.clientX;
+					lastMovePos.y = e.clientY;
 		
 					//currentNodeList = findNodes( selection.focusNode );
 		
@@ -124,8 +136,8 @@
 				var boundary = range.getBoundingClientRect();
 				
 				popup.css({
-					top: boundary.top - 5 + window.pageYOffset + "px",
-					left: (boundary.left + boundary.right)/2 + "px"
+					top: boundary.top - popupOpts.height()*1.4,// - 5 + window.pageYOffset + "px",
+					left: lastMovePos.x - popupOpts.width()/2 //(boundary.left)// + boundary.right)/2 + "px"
 				});
 			};
 		
@@ -182,8 +194,8 @@
 			elem
 				.on('keyup' + namespace, checkTextHighlighting)
 				//.on('mousedown' + namespace, checkTextHighlighting)
-				.on('selectstart'+ namespace, checkTextHighlighting)
-				.on('selectionchange'+ namespace, checkTextHighlighting)
+				//.on('selectstart'+ namespace, checkTextHighlighting)
+				//.on('selectionchange'+ namespace, checkTextHighlighting)
 				.on('mouseup' + namespace, checkTextHighlighting);
 				
 			wrap.on('scroll' + namespace, function() {
@@ -272,10 +284,13 @@
 		if (!document.execCommand) {
 			log('Your browser does not support `document.execCommand`');
 		}
+		if (!getSelection()) {
+			log('Your browser does not support text selection');
+		}
 	};
 	
 	var resize = function () {
-			
+		// TODO
 	};
 	
 	$(autoLoad);
