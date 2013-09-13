@@ -7,6 +7,8 @@
 	
 	var counter = 0;
 	
+	var log = !!window.console ? console.error || console.log : window.alert;
+	
 	var focus = function (elem) {
 		var range = document.createRange();
 		var selection = window.getSelection();
@@ -37,6 +39,8 @@
 			if (!!a) {
 				var action = $.zenpen.actions[a];
 				options.append(action.create());
+			} else {
+				console.error('Action %s does not exists in `$.zenpen.actions`', a);
 			}
 		});
 		return popup.append(options);
@@ -57,45 +61,48 @@
 			var id = (++counter);
 			var namespace = '.zenpen-' + id;
 			var popup = createPopUp(options.actions);
+			var popupOpts = popup.find('.zenpen-options');
 			var wrap = $('<div />').addClass('zenpen-wrap');
 			var scrollTimeout = 0;
-			var lastType = false;
+			var lastSelection = false;
+			var currentNode = $();
 			
-			var checkTextHighlighting = function (event) {
-
+			var checkTextHighlighting = function (e) {
+				var t = $(e.target);
 				var selection = window.getSelection();
+				
+				//console.log(t, selection);
 		
-				if ( (event.target.className === "url-input" ||
-				     event.target.classList.contains( "url" ) ||
-				     event.target.parentNode.classList.contains( "ui-inputs")) ) {
+				if ( t.is('input, textarea, button, *[contenteditable="true"]') ) {
 		
-					currentNodeList = findNodes( selection.focusNode );
+					//currentNodeList = findNodes( selection.focusNode );
 					updateBubbleStates();
-					return;
 				}
 		
 				// Check selections exist
-				if ( selection.isCollapsed === true && lastType === false ) {
+				else if ( selection.isCollapsed === true && lastSelection.isCollapsed === false ) {
 		
 					onSelectorBlur();
 				}
 		
 				// Text is selected
-				if ( selection.isCollapsed === false ) {
+				else if ( selection.isCollapsed === false ) {
 		
-					currentNodeList = findNodes( selection.focusNode );
+					//currentNodeList = findNodes( selection.focusNode );
 		
 					// Find if highlighting is in the editable area
-					if ( hasNode( currentNodeList, "ARTICLE") ) {
+					//if ( hasNode( currentNodeList, "ARTICLE") ) {
 						updateBubbleStates();
 						updateBubblePosition();
-		
+					
 						// Show the ui bubble
-						textOptions.className = "text-options active";
-					}
+						//textOptions.className = "text-options active";
+						popupOpts.addClass('active');
+					//}
 				}
 		
-				lastType = selection.isCollapsed;
+				// preverse selection object
+				lastSelection = selection;
 			};
 
 			var updateBubblePosition = function () {
@@ -103,17 +110,19 @@
 				var range = selection.getRangeAt(0);
 				var boundary = range.getBoundingClientRect();
 				
-				textOptions.style.top = boundary.top - 5 + window.pageYOffset + "px";
-				textOptions.style.left = (boundary.left + boundary.right)/2 + "px";
+				popup.css({
+					top: boundary.top - 5 + window.pageYOffset + "px",
+					left: (boundary.left + boundary.right)/2 + "px"
+				});
 			};
 		
 			var updateBubbleStates = function () {
 		
-				// It would be possible to use classList here, but I feel that the
-				// browser support isn't quite there, and this functionality doesn't
-				// warrent a shim.
+				var update = function (mustHave) {
+					
+				};
 		
-				if ( hasNode( currentNodeList, 'B') ) {
+				/*if ( currentNode.closest('b').length ) {
 					boldButton.className = "bold active"
 				} else {
 					boldButton.className = "bold"
@@ -135,20 +144,17 @@
 					urlButton.className = "url useicons active"
 				} else {
 					urlButton.className = "url useicons"
-				}
+				}*/
 			};
 		
 			var onSelectorBlur = function () {
 		
-				textOptions.className = "text-options fade";
+				popupOpts.removeClass('active').addClass('fade');
+				
 				setTimeout( function() {
 		
-					if (textOptions.className == "text-options fade") {
-		
-						textOptions.className = "text-options";
-						textOptions.style.top = '-999px';
-						textOptions.style.left = '-999px';
-					}
+					popupOpts.removeClass('fade').css({top:'',left:''});
+					
 				}, 260 )
 			};
 
@@ -173,7 +179,7 @@
 			focus(elem);
 		};
 		
-		t.each(init);
+		return t.each(init);
 	};
 
 	$.zenpen = function (target) {
@@ -244,6 +250,9 @@
 	var autoLoad = function () {
 		if (!!$.zenpen.defaults.autoLoad) {
 			$.zenpen();
+		}
+		if (!document.execCommand) {
+			log('Your browser does not support `document.execCommand`');
 		}
 	};
 	
