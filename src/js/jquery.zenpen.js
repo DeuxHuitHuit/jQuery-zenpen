@@ -240,27 +240,34 @@
 				var input = $('<input />').addClass('url-input')
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
+					
+				var realExec = function () {
+					var url = input.val();
+
+					rehighlightLastSelection(lastSelection);
+			
+					// Unlink any current links
+					document.execCommand( 'unlink', false );
+			
+					if (!url) {
+					
+						// Insert HTTP if it doesn't exist.
+						if ( !url.match("^(http|https)://") 
+						  || !url.match("^(mailto|tel|fax|skype|irc):")
+						  || !url.match("^/")  ) {
+							url = "http://" + url;	
+						} 
+			
+						document.execCommand( 'createLink', false, url );
+					}
+				}
 				
 				return btn.add(input);
 			},
 			exec: function ( btn, popup, lastSelection ) {
-
-				rehighlightLastSelection(lastSelection);
-		
-				// Unlink any current links
-				document.execCommand( 'unlink', false );
-		
-				if (!url) {
-				
-					// Insert HTTP if it doesn't exist.
-					if ( !url.match("^(http|https)://") 
-					  || !url.match("^(mailto|tel|fax|skype|irc):")
-					  || !url.match("^/")  ) {
-						url = "http://" + url;	
-					} 
-		
-					document.execCommand( 'createLink', false, url );
-				}
+				var opts = popup.find('.zenpen-options');
+				var fx = opts.hasClass('url-mode') ? 'removeClass' : 'addClass';
+				opts[fx]('url-mode');
 			}
 		},
 		quote: {
