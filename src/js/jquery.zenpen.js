@@ -1,4 +1,12 @@
-
+/*
+ *  jQuery ZenPen
+ *
+ *  Copyright (c) 2013 Deux Huit Huit (http://www.deuxhuithuit.com/)
+ *  Licensed under the MIT (https://github.com/DeuxHuitHuit/jQuery-zenpen/blob/master/LICENSE.txt)
+ *  Based on the work of Tim Holman (https://github.com/tholman/zenpen)
+ *  Licensed under the Apache License (https://github.com/tholman/zenpen/blob/master/licence.md)
+ */
+ 
 (function ($) {
 	
 	if (!!$.zenpen) {
@@ -26,11 +34,11 @@
 		selection.addRange(range);
 	};
 	
-	var rehighlightLastSelection = function (lastSelection) {
-		if (!!lastSelection) {
+	var rehighlightLastSelection = function (lastRange) {
+		if (!!lastRange) {
 			var selection = getSelection();
 			selection.removeAllRanges();
-			selection.addRange( lastSelection.getRangeAt(0) );
+			selection.addRange( lastRange );
 		}
 	}
 	
@@ -74,17 +82,9 @@
 		});
 		return popup.append(options);
 	};
-
-	$.fn.zenpen = function (options) {
-		options = $.extend(true, {}, $.zenpen.defaults, options);
-		
-		if (!$.isArray(options.actions)) {
-			options.actions = options.actions.split(',');
-		}
-		
-		var t = $(this);
-		
-		var init = function (index, elem) {
+	
+	var zenpen = function (options) {
+		return function init(index, elem) {
 			elem = $(elem);
 			
 			var id = (++counter);
@@ -93,7 +93,7 @@
 			var popupOpts = popup.find('.zenpen-options');
 			var wrap = $('<div />').addClass('zenpen-wrap');
 			var scrollTimeout = 0;
-			var lastSelection = null;
+			var lastSelection;
 			var lastMovePos = {x:0,y:0};
 			
 			var checkTextHighlighting = function (e) {
@@ -132,10 +132,11 @@
 						//textOptions.className = "text-options active";
 						popup.addClass('active');
 					//}
+					
+					// preverse selection object
+					lastSelection = selection;
 				}
-		
-				// preverse selection object
-				lastSelection = selection;
+				
 			};
 
 			var updateBubblePosition = function () {
@@ -194,7 +195,7 @@
 				scrollTimeout = setTimeout(updateBubblePosition, 100);
 			});
 			
-			popup.on('click', '*[data-key]', function () {
+			popup.on('click' + namespace, '*[data-key]', function () {
 				var t = $(this);
 				var key = t.attr('data-key');
 				var action = $.zenpen.actions[key];
@@ -203,11 +204,23 @@
 					updateBubbleStates();
 				}
 			});
+			
+			popup.on('update' + namespace, updateBubbleStates);
 							
 			focus(elem);
 		};
+	};
+
+	$.fn.zenpen = function (options) {
+		options = $.extend(true, {}, $.zenpen.defaults, options);
 		
-		return t.each(init);
+		if (!$.isArray(options.actions)) {
+			options.actions = options.actions.split(',');
+		}
+		
+		var t = $(this);
+		
+		return t.each(zenpen(options));
 	};
 
 	$.zenpen = function (target) {
@@ -241,33 +254,67 @@
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
 					
+				var self = this;
+					
 				var realExec = function () {
 					var url = input.val();
 
-					rehighlightLastSelection(lastSelection);
+					rehighlightLastSelection(self._options.range);
 			
 					// Unlink any current links
 					document.execCommand( 'unlink', false );
 			
-					if (!url) {
+					if (!!url) {
 					
 						// Insert HTTP if it doesn't exist.
-						if ( !url.match("^(http|https)://") 
-						  || !url.match("^(mailto|tel|fax|skype|irc):")
-						  || !url.match("^/")  ) {
+						if ( !url.match("^(http|https|ftp|ftps|sftp)://") 
+						  && !url.match("^(mailto|tel|fax|skype|irc):")
+						  && !url.match("^/")  ) {
 							url = "http://" + url;	
-						} 
+						}
 			
 						document.execCommand( 'createLink', false, url );
+						
+						input.val(''); // creates a blur
+						
+						self._options.popup.trigger('update');
 					}
-				}
+				};
+				
+				input.keyup(function (e) {
+					if (e.which === 13) {
+						realExec();
+					} else if (e.which === 27) {
+						self.exec(self._options.btn, self._options.popup);
+					}
+				});
+				
+				input.blur(function (e) {
+					self.exec(self._options.btn, self._options.popup);
+				});
 				
 				return btn.add(input);
 			},
 			exec: function ( btn, popup, lastSelection ) {
 				var opts = popup.find('.zenpen-options');
-				var fx = opts.hasClass('url-mode') ? 'removeClass' : 'addClass';
+				var has = opts.hasClass('url-mode');
+				var fx = has ? 'removeClass' : 'addClass';
 				opts[fx]('url-mode');
+				
+				// save options
+				if (!!lastSelection) {
+					this._options = {
+						btn: btn,
+						popup: popup,
+						range: lastSelection.getRangeAt(0)
+					};
+				}
+				
+				if (!has) {
+					setTimeout(function () {
+						popup.find('input.url-input').focus();
+					}, 50);
+				}
 			}
 		},
 		quote: {
