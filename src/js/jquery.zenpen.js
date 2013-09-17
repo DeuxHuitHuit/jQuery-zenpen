@@ -42,10 +42,6 @@
 		}
 	}
 	
-	var parseHtmlEntity = function (he) {
-		return $('<div />').html(he).text();	
-	};
-	
 	var execCommandFactory = function () {
 		var a = arguments;
 		return function (btn, popup, lastSelection) {
@@ -55,7 +51,7 @@
 	
 	var createButtonFactory = function (cla, text, key) {
 		return createButton = function () {
-			var b = $('<button />').addClass(cla).text(text);
+			var b = $('<button />').addClass(cla).html(text);
 			if (!!key) {
 				b.attr('data-key',key);
 			}
@@ -249,7 +245,7 @@
 				return !!node.closest('a').length;	
 			},
 			create: function () {
-				var btn = createButtonFactory('url useicons', parseHtmlEntity('&#xe005;'), 'url')();
+				var btn = createButtonFactory('url useicons', '&#xe005;', 'url')();
 				var input = $('<input />').addClass('url-input')
 					.attr('type','text')
 					.attr('placeholder','Type or Paste URL here');
@@ -321,7 +317,7 @@
 			validNode: function (node) {
 				return !!node.closest('blockquote').length;	
 			},
-			create: createButtonFactory('quote', parseHtmlEntity('&rdquo;'), 'quote'),
+			create: createButtonFactory('quote', '&rdquo;', 'quote'),
 			exec: function (btn, popup, lastSelection ) {
 		
 				if ( this.validNode($(lastSelection.focusNode)) ) {
