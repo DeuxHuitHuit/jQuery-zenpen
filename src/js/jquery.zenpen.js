@@ -15,15 +15,13 @@
 	
 	var counter = 0;
 	
-	var log = !!window.console ? console.error || console.log : window.alert;
-	
 	var getSelection = function () {
 		if (!!window.getSelection) {
 			return window.getSelection();
 		} else if (!!document.selection) {
 			return document.selection;
 		}
-		log('No selection API found');
+		console.error('No selection API found');
 	};
 	
 	var focus = function (elem) {
@@ -63,9 +61,11 @@
 		$.each(actions, function (i, a) {
 			if (!!a) {
 				var action = $.zenpen.actions[a];
-				cb(action, i, a);
-			} else {
-				console.error('Action %s does not exists in `$.zenpen.actions`', a);
+				if (!!action) {
+					cb(action, i, a);
+				} else {
+					console.info('Action '+ a +' does not exists in `$.zenpen.actions`');
+				}
 			}
 		});
 	};
@@ -225,115 +225,19 @@
 		target.zenpen();
 	};
 	
-	$.zenpen.actions = {
-		bold: {
-			validNode: function (node) {
-				return !!node.closest('b, strong').length;	
-			},
-			create: createButtonFactory('bold', 'b', 'bold'),
-			exec: execCommandFactory('bold', false )
-		},
-		italic: {
-			validNode: function (node) {
-				return !!node.closest('i, em').length;	
-			},
-			create: createButtonFactory('italic', 'i', 'italic'),
-			exec: execCommandFactory('italic', false )	
-		},
-		url: {
-			validNode: function (node) {
-				return !!node.closest('a').length;	
-			},
-			create: function () {
-				var btn = createButtonFactory('url useicons', '&#xe005;', 'url')();
-				var input = $('<input />').addClass('url-input')
-					.attr('type','text')
-					.attr('placeholder','Type or Paste URL here');
-					
-				var self = this;
-					
-				var realExec = function () {
-					var url = input.val();
-
-					rehighlightLastSelection(self._options.range);
-			
-					// Unlink any current links
-					document.execCommand( 'unlink', false );
-			
-					if (!!url) {
-					
-						// Insert HTTP if it doesn't exist.
-						if ( !url.match("^(http|https|ftp|ftps|sftp)://") 
-						  && !url.match("^(mailto|tel|fax|skype|irc):")
-						  && !url.match("^/")  ) {
-							url = "http://" + url;	
-						}
-			
-						document.execCommand( 'createLink', false, url );
-						
-						input.val(''); // creates a blur
-						
-						self._options.popup.trigger('update');
-					}
-				};
-				
-				input.keyup(function (e) {
-					if (e.which === 13) {
-						realExec();
-					} else if (e.which === 27) {
-						self.exec(self._options.btn, self._options.popup);
-					}
-				});
-				
-				input.blur(function (e) {
-					self.exec(self._options.btn, self._options.popup);
-				});
-				
-				return btn.add(input);
-			},
-			exec: function ( btn, popup, lastSelection ) {
-				var opts = popup.find('.zenpen-options');
-				var has = opts.hasClass('url-mode');
-				var fx = has ? 'removeClass' : 'addClass';
-				opts[fx]('url-mode');
-				
-				// save options
-				if (!!lastSelection) {
-					this._options = {
-						btn: btn,
-						popup: popup,
-						range: lastSelection.getRangeAt(0)
-					};
-				}
-				
-				if (!has) {
-					setTimeout(function () {
-						popup.find('input.url-input').focus();
-					}, 50);
-				}
-			}
-		},
-		quote: {
-			validNode: function (node) {
-				return !!node.closest('blockquote').length;	
-			},
-			create: createButtonFactory('quote', '&rdquo;', 'quote'),
-			exec: function (btn, popup, lastSelection ) {
+	$.zenpen.actions = {};
 		
-				if ( this.validNode($(lastSelection.focusNode)) ) {
-					document.execCommand( 'formatBlock', false, 'p' );
-					document.execCommand( 'outdent' );
-				} else {
-					document.execCommand( 'formatBlock', false, 'blockquote' );
-				}
-			}
-		}
-	};
-	
 	$.zenpen.defaults = {
 		autoLoad: true,
 		autoLoadSelector: '*[contenteditable="true"]',
-		actions: 'url,bold,italic,quote',
+		actions: 'url,bold,italic,quote'
+	};
+	
+	$.zenpen.api = {
+		rehighlightLastSelection: rehighlightLastSelection,
+		getSelection: getSelection,
+		execCommandFactory: execCommandFactory, 
+		createButtonFactory: createButtonFactory
 	};
 	
 	var autoLoad = function () {
@@ -341,10 +245,10 @@
 			$.zenpen();
 		}
 		if (!document.execCommand) {
-			log('Your browser does not support `document.execCommand`');
+			console.error('Your browser does not support `document.execCommand`');
 		}
 		if (!getSelection()) {
-			log('Your browser does not support text selection');
+			console.error('Your browser does not support text selection');
 		}
 	};
 	
