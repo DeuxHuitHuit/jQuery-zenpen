@@ -142,7 +142,15 @@
 				
 				popup.css({
 					top: boundary.top - popupOpts.height()*1.4,// - 5 + window.pageYOffset + "px",
-					left: lastMovePos.x - popupOpts.width()/2 //(boundary.left)// + boundary.right)/2 + "px"
+					left: lastMovePos.x - popupOpts.width()/2, //(boundary.left)// + boundary.right)/2 + "px"
+					width: (function () {
+						var sum = options.actions.length;
+						eachActions(options.actions, function (action, i, a) {
+							var btn = popupOpts.find('*[data-key="'+a+'"]');
+							sum += btn.outerWidth(true);
+						});
+						return sum;
+					})()
 				});
 			};
 		
@@ -230,7 +238,7 @@
 	$.zenpen.defaults = {
 		autoLoad: true,
 		autoLoadSelector: '*[contenteditable="true"]',
-		actions: 'url,bold,italic,quote'
+		actions: 'url,h1,bold,italic,quote'
 	};
 	
 	$.zenpen.api = {
