@@ -19,7 +19,7 @@
 		validNode: function (node) {
 			return !!node.closest('a').length;	
 		},
-		create: function () {
+		create: function (options) {
 			var btn = api.createButtonFactory('url useicons', '&#xe005;', 'url')();
 			var input = $('<input />').addClass('url-input')
 				.attr('type','text')
@@ -28,7 +28,10 @@
 			var self = this;
 			
 			var exit = function () {
-				self._options.opts.removeClass('url-mode');	
+				setTimeout(function () {
+					self._options.opts.removeClass('url-mode');
+					self._options.popup.width(self._options.popup.data().width);
+				}, 100);	
 			};
 				
 			var realExec = function () {
@@ -68,12 +71,17 @@
 			
 			return btn.add(input);
 		},
-		exec: function ( btn, popup, lastSelection ) {
+		exec: function ( btn, popup, lastSelection, options ) {
 			var opts = popup.find('.zenpen-options');
 			
 			if (!opts.hasClass('url-mode')) {
 				
+				var width = popup.width();
+				
 				opts.addClass('url-mode');
+				
+				var newWidth = /*popup.find('input.url-input').width()*/245 + btn.width();
+				popup.width(newWidth);
 				
 				// save options
 				if (!!lastSelection && !lastSelection.isCollapsed) {
@@ -83,6 +91,7 @@
 						opts: opts,
 						range: lastSelection.getRangeAt(0)
 					};
+					popup.data('width', width);
 				}
 				
 				setTimeout(function () {
