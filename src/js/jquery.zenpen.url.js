@@ -92,6 +92,8 @@
 						range: lastSelection.getRangeAt(0)
 					};
 					popup.data('width', width);
+					
+					popup.find('input.url-input').val($(lastSelection.focusNode).closest('a').attr('href'));
 				}
 				
 				setTimeout(function () {
