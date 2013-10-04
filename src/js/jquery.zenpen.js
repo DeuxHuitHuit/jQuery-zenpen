@@ -2,7 +2,7 @@
  *  jQuery ZenPen
  *
  *  Copyright (c) 2013 Deux Huit Huit (http://www.deuxhuithuit.com/)
- *  Licensed under the MIT (https://github.com/DeuxHuitHuit/jQuery-zenpen/blob/master/LICENSE.txt)
+ *  Licensed under the MIT (http://deuxhuithuit.mit-license.org)
  *  Based on the work of Tim Holman (https://github.com/tholman/zenpen)
  *  Licensed under the Apache License (https://github.com/tholman/zenpen/blob/master/licence.md)
  */
@@ -70,13 +70,13 @@
 		});
 	};
 	
-	var createPopUp = function (actions) {
+	var createPopUp = function (options) {
 		var popup = $('<div />').addClass('zenpen-panel');
-		var options = $('<div />').addClass('zenpen-options');
-		eachActions(actions, function (action, i, a) {
-			options.append(action.create());
+		var poptions = $('<div />').addClass('zenpen-options');
+		eachActions(options.actions, function (action, i, a) {
+			poptions.append(action.create(options));
 		});
-		return popup.append(options);
+		return popup.append(poptions);
 	};
 	
 	var zenpen = function (options) {
@@ -85,7 +85,7 @@
 			
 			var id = (++counter);
 			var namespace = '.zenpen-' + id;
-			var popup = createPopUp(options.actions);
+			var popup = createPopUp(options);
 			var popupOpts = popup.find('.zenpen-options');
 			var wrap = $('<div />').addClass('zenpen-wrap');
 			var scrollTimeout = 0;
@@ -204,7 +204,7 @@
 				var key = t.attr('data-key');
 				var action = $.zenpen.actions[key];
 				if (!!action) {
-					action.exec(t, popup, lastSelection);
+					action.exec(t, popup, lastSelection, options);
 					updateBubbleStates();
 				}
 			});

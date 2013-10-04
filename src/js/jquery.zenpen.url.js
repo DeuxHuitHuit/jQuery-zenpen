@@ -2,7 +2,7 @@
  *  jQuery ZenPen url/link action
  *
  *  Copyright (c) 2013 Deux Huit Huit (http://www.deuxhuithuit.com/)
- *  Licensed under the MIT (https://github.com/DeuxHuitHuit/jQuery-zenpen/blob/master/LICENSE.txt)
+ *  Licensed under the MIT (http://deuxhuithuit.mit-license.org)
  *  Based on the work of Tim Holman (https://github.com/tholman/zenpen)
  *  Licensed under the Apache License (https://github.com/tholman/zenpen/blob/master/licence.md)
  */
@@ -26,6 +26,10 @@
 				.attr('placeholder','Type or Paste URL here');
 				
 			var self = this;
+			
+			var exit = function () {
+				self._options.opts.removeClass('url-mode');	
+			};
 				
 			var realExec = function () {
 				var url = input.val();
@@ -56,32 +60,31 @@
 				if (e.which === 13) {
 					realExec();
 				} else if (e.which === 27) {
-					self.exec(self._options.btn, self._options.popup);
+					exit();
 				}
 			});
 			
-			input.blur(function (e) {
-				self.exec(self._options.btn, self._options.popup);
-			});
+			input.blur(exit);
 			
 			return btn.add(input);
 		},
 		exec: function ( btn, popup, lastSelection ) {
 			var opts = popup.find('.zenpen-options');
-			var has = opts.hasClass('url-mode');
-			var fx = has ? 'removeClass' : 'addClass';
-			opts[fx]('url-mode');
 			
-			// save options
-			if (!!lastSelection) {
-				this._options = {
-					btn: btn,
-					popup: popup,
-					range: lastSelection.getRangeAt(0)
-				};
-			}
-			
-			if (!has) {
+			if (!opts.hasClass('url-mode')) {
+				
+				opts.addClass('url-mode');
+				
+				// save options
+				if (!!lastSelection && !lastSelection.isCollapsed) {
+					this._options = {
+						btn: btn,
+						popup: popup,
+						opts: opts,
+						range: lastSelection.getRangeAt(0)
+					};
+				}
+				
 				setTimeout(function () {
 					popup.find('input.url-input').focus();
 				}, 50);

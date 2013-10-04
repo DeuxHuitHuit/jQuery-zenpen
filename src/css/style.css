@@ -180,10 +180,10 @@ a:hover {
 }
 
 .zenpen-options.url-mode .bold, .zenpen-options.url-mode .italic, .zenpen-options.url-mode .quote {
-	width: 0px;
-	overflow: hidden;
-	margin: 0px;
-	opacity: 0;
+	//width: 0px;
+	//overflow: hidden;
+	//margin: 0px;
+	//opacity: 0;
 }
 
 .zenpen-options .italic {
@@ -205,8 +205,9 @@ a:hover {
 	border-radius: 5px;
 	margin-right: 2px;
 	font-family: 'Lora', serif;
+	text-align: center;
 	
-	background: none;
+	background-color: rgba(255,255,255,0.1);
 	cursor: pointer;
 	font-size: 25px;
 	color: inherit;
@@ -239,7 +240,8 @@ a:hover {
 	padding: 0px;
 	margin: 0px;
 	border: 0px;
-	float: left;
+	//float: left;
+	position: absolute;
 	width: 0px;
 }
 
