@@ -126,6 +126,7 @@
 					
 						// Show the ui bubble
 						//textOptions.className = "text-options active";
+						$('.zenpen-panel').not(popup).removeClass('active');
 						popup.addClass('active');
 					//}
 					
