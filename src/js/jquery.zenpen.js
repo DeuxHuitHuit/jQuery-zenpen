@@ -153,7 +153,7 @@
 					})()
 				});
 			};
-		
+			
 			var updateBubbleStates = function () {
 				if (!lastSelection) {
 					return;
