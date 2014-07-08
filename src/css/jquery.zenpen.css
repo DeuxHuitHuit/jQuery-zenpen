@@ -19,6 +19,7 @@
 	z-index: 5;
 	margin-top: 5px;
 	opacity: 0;
+	pointer-events: none;
 }
 
 .zenpen-panel.fade {
@@ -27,8 +28,9 @@
 }
 
 .zenpen-panel.active {
-	opacity: 1;
 	margin-top: 0px;
+	opacity: 1;
+	pointer-events: auto;
 }
 
 .zenpen-options {
